@@ -41,19 +41,6 @@ def get_service_account_credentials():
         "client_x509_cert_url",
     ]
 
-    env_key_names = {
-        "type": "GCP_SA_TYPE",
-        "project_id": "GCP_SA_PROJECT_ID",
-        "private_key_id": "GCP_SA_PRIVATE_KEY_ID",
-        "private_key": "GCP_SA_PRIVATE_KEY",
-        "client_email": "GCP_SA_CLIENT_EMAIL",
-        "client_id": "GCP_SA_CLIENT_ID",
-        "auth_uri": "GCP_SA_AUTH_URI",
-        "token_uri": "GCP_SA_TOKEN_URI",
-        "auth_provider_x509_cert_url": "GCP_SA_AUTH_PROVIDER_X509_CERT_URL",
-        "client_x509_cert_url": "GCP_SA_CLIENT_X509_CERT_URL",
-    }
-
     def build_from(source_get):
         return {
             "type": source_get("GCP_SA_TYPE"),
@@ -85,14 +72,8 @@ def get_service_account_credentials():
         secrets_flat["private_key"] = secrets_flat["private_key"].replace("\\n", "\n")
         return secrets_flat
 
-    # If not found, show which env vars are missing (don't print values)
-    missing = [env_key_names[k] for k in required_keys
-               if (not os.getenv(env_key_names[k])) and (secrets_get(env_key_names[k]) is None)]
-
     st.error(
         "Credential service account tidak ditemukan. "
-        + (f"Missing: {', '.join(missing)}. " if missing else "")
-        + "Set GCP_SA_* di Streamlit secrets atau environment."
     )
     st.stop()
 
