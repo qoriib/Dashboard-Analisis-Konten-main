@@ -1,5 +1,6 @@
 import os
 import json
+from pathlib import Path
 import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -28,14 +29,6 @@ TEMPLATE = "plotly_white"
 WARNA_BIRU = "#4C78A8"
 
 def get_service_account_credentials():
-    env_json = os.getenv("GCP_SERVICE_ACCOUNT_JSON")
-    if env_json:
-        try:
-            return json.loads(env_json)
-        except json.JSONDecodeError:
-            st.error("GCP_SERVICE_ACCOUNT_JSON tidak berformat JSON yang valid.")
-            st.stop()
-
     env_map = {
         "type": os.getenv("GCP_SA_TYPE"),
         "project_id": os.getenv("GCP_SA_PROJECT_ID"),
@@ -73,7 +66,8 @@ def get_service_account_credentials():
     except Exception:
         st.error(
             "Credential service account tidak ditemukan. "
-            "Set env GCP_SERVICE_ACCOUNT_JSON atau tambahkan gcp_service_account ke st.secrets."
+            "Set env GCP_SERVICE_ACCOUNT_JSON atau set GCP_SA_* di .env / environment, "
+            "atau tambahkan gcp_service_account ke st.secrets."
         )
         st.stop()
 
