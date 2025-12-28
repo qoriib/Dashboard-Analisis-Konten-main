@@ -36,6 +36,38 @@ def get_service_account_credentials():
             st.error("GCP_SERVICE_ACCOUNT_JSON tidak berformat JSON yang valid.")
             st.stop()
 
+    env_map = {
+        "type": os.getenv("GCP_SA_TYPE"),
+        "project_id": os.getenv("GCP_SA_PROJECT_ID"),
+        "private_key_id": os.getenv("GCP_SA_PRIVATE_KEY_ID"),
+        "private_key": os.getenv("GCP_SA_PRIVATE_KEY"),
+        "client_email": os.getenv("GCP_SA_CLIENT_EMAIL"),
+        "client_id": os.getenv("GCP_SA_CLIENT_ID"),
+        "auth_uri": os.getenv("GCP_SA_AUTH_URI"),
+        "token_uri": os.getenv("GCP_SA_TOKEN_URI"),
+        "auth_provider_x509_cert_url": os.getenv("GCP_SA_AUTH_PROVIDER_X509_CERT_URL"),
+        "client_x509_cert_url": os.getenv("GCP_SA_CLIENT_X509_CERT_URL"),
+        "universe_domain": os.getenv("GCP_SA_UNIVERSE_DOMAIN"),
+    }
+
+    required_keys = [
+        "type",
+        "project_id",
+        "private_key_id",
+        "private_key",
+        "client_email",
+        "client_id",
+        "auth_uri",
+        "token_uri",
+        "auth_provider_x509_cert_url",
+        "client_x509_cert_url",
+    ]
+
+    if all(env_map[k] for k in required_keys):
+        # Replace escaped newlines so the key is usable
+        env_map["private_key"] = env_map["private_key"].replace("\\n", "\n")
+        return env_map
+
     try:
         return dict(st.secrets["gcp_service_account"])
     except Exception:
