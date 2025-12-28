@@ -4,3 +4,11 @@ __pycache__/
 .ipynb_checkpoints/
 .env
 
+# Ignore Streamlit secrets
+.streamlit/
+
+# Ignore virtual environment
+.venv/
+
+# Ignore VS Code workspace settings
+.vscode/

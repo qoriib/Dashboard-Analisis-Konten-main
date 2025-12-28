@@ -1,6 +1,5 @@
 import os
 import json
-from pathlib import Path
 import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -29,20 +28,6 @@ TEMPLATE = "plotly_white"
 WARNA_BIRU = "#4C78A8"
 
 def get_service_account_credentials():
-    env_map = {
-        "type": os.getenv("GCP_SA_TYPE"),
-        "project_id": os.getenv("GCP_SA_PROJECT_ID"),
-        "private_key_id": os.getenv("GCP_SA_PRIVATE_KEY_ID"),
-        "private_key": os.getenv("GCP_SA_PRIVATE_KEY"),
-        "client_email": os.getenv("GCP_SA_CLIENT_EMAIL"),
-        "client_id": os.getenv("GCP_SA_CLIENT_ID"),
-        "auth_uri": os.getenv("GCP_SA_AUTH_URI"),
-        "token_uri": os.getenv("GCP_SA_TOKEN_URI"),
-        "auth_provider_x509_cert_url": os.getenv("GCP_SA_AUTH_PROVIDER_X509_CERT_URL"),
-        "client_x509_cert_url": os.getenv("GCP_SA_CLIENT_X509_CERT_URL"),
-        "universe_domain": os.getenv("GCP_SA_UNIVERSE_DOMAIN"),
-    }
-
     required_keys = [
         "type",
         "project_id",
@@ -56,21 +41,60 @@ def get_service_account_credentials():
         "client_x509_cert_url",
     ]
 
-    if all(env_map[k] for k in required_keys):
-        # Replace escaped newlines so the key is usable
+    env_key_names = {
+        "type": "GCP_SA_TYPE",
+        "project_id": "GCP_SA_PROJECT_ID",
+        "private_key_id": "GCP_SA_PRIVATE_KEY_ID",
+        "private_key": "GCP_SA_PRIVATE_KEY",
+        "client_email": "GCP_SA_CLIENT_EMAIL",
+        "client_id": "GCP_SA_CLIENT_ID",
+        "auth_uri": "GCP_SA_AUTH_URI",
+        "token_uri": "GCP_SA_TOKEN_URI",
+        "auth_provider_x509_cert_url": "GCP_SA_AUTH_PROVIDER_X509_CERT_URL",
+        "client_x509_cert_url": "GCP_SA_CLIENT_X509_CERT_URL",
+    }
+
+    def build_from(source_get):
+        return {
+            "type": source_get("GCP_SA_TYPE"),
+            "project_id": source_get("GCP_SA_PROJECT_ID"),
+            "private_key_id": source_get("GCP_SA_PRIVATE_KEY_ID"),
+            "private_key": source_get("GCP_SA_PRIVATE_KEY"),
+            "client_email": source_get("GCP_SA_CLIENT_EMAIL"),
+            "client_id": source_get("GCP_SA_CLIENT_ID"),
+            "auth_uri": source_get("GCP_SA_AUTH_URI"),
+            "token_uri": source_get("GCP_SA_TOKEN_URI"),
+            "auth_provider_x509_cert_url": source_get("GCP_SA_AUTH_PROVIDER_X509_CERT_URL"),
+            "client_x509_cert_url": source_get("GCP_SA_CLIENT_X509_CERT_URL"),
+            "universe_domain": source_get("GCP_SA_UNIVERSE_DOMAIN"),
+        }
+
+    env_map = build_from(os.getenv)
+    if all(env_map.get(k) for k in required_keys):
         env_map["private_key"] = env_map["private_key"].replace("\\n", "\n")
         return env_map
 
-    try:
-        return dict(st.secrets["gcp_service_account"])
-    except Exception:
-        st.error(
-            "Credential service account tidak ditemukan. "
-            "Set env GCP_SERVICE_ACCOUNT_JSON atau set GCP_SA_* di .env / environment, "
-            "atau tambahkan gcp_service_account ke st.secrets."
-        )
-        st.stop()
+    def secrets_get(key):
+        try:
+            return st.secrets[key]
+        except Exception:
+            return None
 
+    secrets_flat = build_from(secrets_get)
+    if all(secrets_flat.get(k) for k in required_keys):
+        secrets_flat["private_key"] = secrets_flat["private_key"].replace("\\n", "\n")
+        return secrets_flat
+
+    # If not found, show which env vars are missing (don't print values)
+    missing = [env_key_names[k] for k in required_keys
+               if (not os.getenv(env_key_names[k])) and (secrets_get(env_key_names[k]) is None)]
+
+    st.error(
+        "Credential service account tidak ditemukan. "
+        + (f"Missing: {', '.join(missing)}. " if missing else "")
+        + "Set GCP_SA_* di Streamlit secrets atau environment."
+    )
+    st.stop()
 
 @st.cache_data(ttl=300)
 def load_data():
